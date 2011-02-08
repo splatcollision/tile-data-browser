@@ -35,7 +35,7 @@ function itemClick (evt) {
 	userCoords[1] += disty;
 	
 	var speed = Math.floor(Math.sqrt((distx * distx) + (disty * disty)));
-	console.log('speed = ' + speed);
+//	console.log('speed = ' + speed);
 //	document.getElementById('display').innerHTML = 'Coordinates: x ' + userCoords[0] + ', y ' + userCoords[1];
 	
 	if (anim) {
@@ -45,6 +45,44 @@ function itemClick (evt) {
 		ready = true;
 	}
 }
+
+function dataviewclick (evt) {
+	// alternate - clicked on a DOM element with all the domtiles
+//	console.log('dataviewclick');
+//	console.log(evt.target.id); // 'rowxcolx' or 'textdata'
+	
+	if (!ready) return;
+	ready = false;
+	if (evt.target.id == 'textdata') {
+//		console.log('between items click');
+		ready = true;
+		return;
+	}
+	var re = /row([0-9]{1,})col([0-9]{1,})/;
+	var coords = re.exec(evt.target.id);
+	
+	if (coords) {
+		var distx = parseInt(coords[2]) - Math.floor(centerCoords[0] / 2) + adjustW;
+		var disty = parseInt(coords[1]) - Math.floor(centerCoords[1] / 2) + adjustH;
+		userCoords[0] += distx;
+		userCoords[1] += disty;
+		if (anim) {
+			var speed = Math.floor(Math.sqrt((distx * distx) + (disty * disty)));
+			dataview.style.cssText = dataview.style.cssText.replace(/block/, 'none');
+			// find svg item under me
+			var col = parseInt(gridSize.w / 2) + distx;
+			var row = parseInt(gridSize.h / 2) + disty;
+			var item = rects[col][row].rect;
+			//console.log(item);
+			movetocenter(item, speed);
+		} else {
+			getpixeldata(userCoords);
+			ready = true;
+		}
+	}
+	
+}
+
 
 function movetocenter (item, spd) {
 	//console.log(item.attrs.x + ' ' + item.attrs.y);
@@ -68,16 +106,17 @@ function resetgrid () {
 	gv.style.webkitTransform = new WebKitCSSMatrix(gvCenter);
 	
 	getpixeldata(userCoords);
+	dataview.style.cssText = dataview.style.cssText.replace(/none/, 'block');
 	ready = true;
 //	gv.style.cssText += '-webkit-transition-property: all;-webkit-transition-duration: 1500ms;';
 }
 
 function moveby (vec,speed) {
 
-	
+//	console.log('moveby vec.x:' + vec.x + ' vec.y: ' + vec.y);
 	var time = 150;
 	if (speed) time += (speed * 50);
-	console.log('time ' + time);
+//	console.log('time ' + time);
 //	var dist = Math.sqrt((vec.x * vec.x) + (vec.y * vec.y)); 
 //	var dist = ;
 //	console.log(vec.x + ' ' + vec.y);
@@ -94,12 +133,25 @@ function moveby (vec,speed) {
 var itemsize = {w: 60, h: 45, m: 4};
 
 // calc number of items needed for an infinite grid	
-var gridSize = {w: parseInt(uv.width / itemsize.w) * 2, h: parseInt(uv.height / itemsize.h) * 2}
+
+
+var visibleGridSize = {w: parseInt(uv.width / (itemsize.w + itemsize.m)), h: parseInt(uv.height / (itemsize.h + itemsize.m))};
+var gridSize = {w: visibleGridSize.w * 2, h: visibleGridSize.h * 2};
+
+//console.log('viz grid tester: W' + visibleGridSize.w);
+//console.log('viz grid tester: H' + visibleGridSize.h);
+var adjustW = (visibleGridSize.w % 2 == 0) ? 1 : 0;  // for even values of W  even = 2 odd = 1
+var adjustH = (visibleGridSize.h % 2 == 0) ? 1 : 0;  
+visibleGridSize.w -= adjustW;
+visibleGridSize.h -= adjustH;
+
+
 
 // draw grid of items
 var gridview = Raphael('gridview',gridSize.w * (itemsize.w + itemsize.m),gridSize.h * (itemsize.h + itemsize.m));
-	
 
+var dataview = document.getElementById('textdata');
+//console.log(dataview);
 // store?
 rects = [];
 rectCols = [];
@@ -108,15 +160,33 @@ for (var i = 0; i < gridSize.w; i++) {
 	var rectCols = [];
 	for (var j = 0; j < gridSize.h; j++) {
 		var newrect = gridview.rect(i * (itemsize.w + itemsize.m) , j * (itemsize.h + itemsize.m),itemsize.w,itemsize.h).attr({fill: 'rgb(168,168,168)'}).click(itemClick);
+		
 		newrect.node.datax = i;
 		newrect.node.datay = j;
 		//var newtext = gridview.text(i * 50 , j * 40, 'x').attr({fill: '#000000'}); // too slow!
 		rectCols.push({x: i, y: j, rect: newrect});
+
+		// new dom ele for text overlays
+		
 	}
+	
 	rects.push(rectCols);
 }
 
-setcenter(rects[parseInt(gridSize.w / 2)][parseInt(gridSize.h / 2)].rect);
+// second pass just visible area please
+for (var i = 0; i < visibleGridSize.h; i++) {
+	for (var j = 0; j < visibleGridSize.w; j++) {
+		dataview.innerHTML += '<div id="row' + i + 'col' + j + '" class="domtile">' + i + ' x ' + j + '</div>';		
+	}
+	dataview.innerHTML += '<br>';
+}
+
+var dataViewOffset = {x: (uv.width - (visibleGridSize.w * (itemsize.w + itemsize.m))) / 2, y: (uv.height - (visibleGridSize.h * (itemsize.h + itemsize.m))) / 2};
+//console.log(dataViewOffset.x + ' ' + dataViewOffset.y);
+// align the text data overlay with the main grid
+dataview.style.cssText += 'left: ' + dataViewOffset.x + 'px; top: ' + dataViewOffset.y + 'px; display: block;'; 
+
+
 rects[parseInt(gridSize.w / 2)][parseInt(gridSize.h / 2)].rect.attr({stroke: '#000000'}).animate({stroke: 'rgb(0,255,0)'},1500);
 //console.log(rects.length);
 
@@ -138,8 +208,9 @@ var dataCenter = {}
 var img = new Image();
 img.onload = function() {
 	loadpixeldata(img);
+	setcenter(rects[parseInt(gridSize.w / 2)][parseInt(gridSize.h / 2)].rect);
 };
-img.setAttribute("src", "19-minutes-heatmap_xhair.png");
+img.setAttribute("src", "19-minutes-heatmap_xhair.jpg");
 
 
 function loadpixeldata (img) {
@@ -152,7 +223,7 @@ function loadpixeldata (img) {
 	var ctx = back.getContext("2d");
 	ctx.clearRect(0, 0, dataDim.w, dataDim.h);
 	ctx.drawImage(img, 0, 0);
- 
+ 	ready = true;
 }
 
 
@@ -177,6 +248,23 @@ function getpixeldata (offset) {
 			var color = 'rgb(' + r + ', ' + g + ', ' + b + ')';
 			rects[x][y].rect.attr({fill: color});
 	}
+	gettextdata(dataOrigX, dataOrigY);
+}
+
+
+function gettextdata (offsetx,offsety) {
+	// second pass just visible area please
+//	console.log(offsetx);
+	
+	var startRow = offsetx + (gridSize.w / 2 - visibleGridSize.w / 2) + 0.5;
+	var startCol = offsety + (gridSize.h / 2 - visibleGridSize.h / 2) + 0.5;
+	for (var i = 0; i < visibleGridSize.h; i++) {
+		for (var j = 0; j < visibleGridSize.w; j++) {
+			var id = 'row' + i + 'col' + j;
+			var ele = document.getElementById(id);
+			ele.innerHTML = (startRow + j) + ' x ' + (startCol + i);
+		}
+	}
 	
 }
 
@@ -199,9 +287,9 @@ function navigateData(evt) {
 //	console.log('navigateData');
 	// get coords of click
 //	var clickLoc = {x: evt.x + ' '
-	var xP = evt.x / uv.width;
+	var xP = evt.x / uv.width;  // p of click compared to user viewport
 	var yP = evt.y / uv.height;
-	var dataX = parseInt(xP * dataDim.w) - dataCenter.x + centerCoords[0];
+	var dataX = parseInt(xP * dataDim.w) - dataCenter.x + centerCoords[0];  // translate that p to data size
 	var dataY = parseInt(yP * dataDim.h) - dataCenter.y + centerCoords[1];
 //	console.log(dataX + ' ' + dataY);
 	getpixeldata([dataX,dataY]);
@@ -245,84 +333,4 @@ function keycontrols(evt) {
 
 
 document.addEventListener('keydown', keycontrols, false);
-
-/*
-
-			Event.observe(document, 'keydown', function (evt){
-
-				var key = evt.keyCode;
-				if (!this.observeKeys) { 
-					return;
-
-				}
-
-		//	console.log("KEYCODE pressed: '" +  key + "'");
-
-				switch (key) {
-					
-
-					case 13:
-						// return
-
-						break;
-					case 8:
-						// delete
-						Editor.deleteSelection();
-						evt.preventDefault();  // stop back navigation?
-						Event.stop(evt);
-						
-					    evt.returnValue = false;
-						break;
-
-					case 32:
-						// space
-						Editor.spacebar = true;
-						// tell timeline to play/pause?
-						if (!Editor.mouseisdown) {
-							Editor.Timeline.playback();
-						}
-						evt.preventDefault();  // stop back navigation?
-						Event.stop(evt);
-						
-					    evt.returnValue = false;
-					
-					
-						break;
-						
-					case 71:
-						// "g"
-						
-						Editor.DocGrid.toggle();
-					case 86:
-						// v
-						//editor_timeline.toolModeSelect();
-						//editor_timeline.setToolbar("Select");
-						break;
-					case 69:
-						// e
-						//editor_timeline.toolModeDrawRects();
-						//editor_timeline.setToolbar("NewShape");
-						break;
-
-					case 37:
-						// left arrow
-
-						Editor.tweakSelection(-1,0,evt);
-						break;
-					case 39:
-						// right arrow
-						Editor.tweakSelection(1,0,evt);
-						break;
-					case 38: 
-						// up arrow
-						Editor.tweakSelection(0,-1,evt);
-						break;
-					case 40:
-						// down arrow
-						Editor.tweakSelection(0,1,evt);
-						break;
-				}
-
-			}.bind(this));
-			
-			*/
+dataview.addEventListener('click', dataviewclick, false);
