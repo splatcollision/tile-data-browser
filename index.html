@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Tile Data Browser</title>
+	<style>
+		body {
+			overflow: hidden;
+		}
+		
+		#gridview {
+			margin: 0 0;
+			z-index: 5;
+			position: absolute;
+			top: 0px;
+			left: 0px;
+			
+		}
+		
+		
+		.animall {
+			-webkit-transition-property: all;
+			-webkit-transition-duration: 1500ms;
+		}
+		
+		#coords {
+			margin: 0 0;
+			z-index: 2;
+			position: absolute;
+			top: 0px;
+			left: 0px;
+		}
+		
+		#show {
+			margin: 0 0;
+			padding: 5px;
+			z-index: 15;
+			position: absolute;
+			bottom: 0px;
+			right: 0px;
+			background-color: #FFF;
+			cursor: pointer;
+		}
+		
+		#display {
+			
+			position: absolute;
+			top: 5px;
+			left: 5px;
+			z-index: 6;
+			background-color: white;
+			width: 200px;
+			
+		}
+		#data {
+			width: 100%;
+			height: 100%;
+			position: absolute;
+			top: 0px;
+			left: 0px;
+
+			z-index: 10;
+		}
+		
+		.imagefade {
+			-webkit-animation-name: image_fade_out;
+			-webkit-animation-duration: 4s;
+			-webkit-animation-delay: 1s;
+			-webkit-animation-fill-mode: both;
+		}
+
+		@-webkit-keyframes image_fade_out {
+
+			0% {opacity: 1; -webkit-transform: translate3d(0px,0px,0px) scale(1)}
+			80% {opacity: 1}
+			99% {z-index: 10}
+			100% {opacity: 0;-webkit-transform: translate3d(0px,0px,0px) scale(128);z-index: 1}
+
+		}
+		
+		
+		
+	</style>
+	<script src="raphael-min.js" type="text/javascript" charset="utf-8"></script>
+	
+
+	
+	
+</head>
+<body>
+
+	<div id="gridview"></div>
+	<div id="coords"></div>	
+	<div id="show">show entire image</div>
+	
+	<div id="display"></div>
+	<img id="data" style="display: none;" src="19-minutes-heatmap_xhair.png" width="1920" height="1080">
+	<script src="grid1.js" type="text/javascript" charset="utf-8"></script>
+		
+		
+</body>
+</html>
